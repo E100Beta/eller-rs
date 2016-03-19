@@ -1,0 +1,7 @@
+[package]
+name = "eller"
+version = "0.1.0"
+authors = ["Pavel Kiselev <kispash@yandex.ru>"]
+
+[dependencies]
+rand="0.3"

@@ -1,13 +1,14 @@
 // Copyright 2016 Pavel Kiselev
 
-// My implementation of Eller's Algorithm, following instructions at http://www.neocomputer.org/projects/eller.html
+// My implementation of Eller's Algorithm,
+// following instructions at http://www.neocomputer.org/projects/eller.html
 // Comments detailing algorithm steps are mostly copypasted from there
 
 
 #![allow(dead_code)]
 
 
-use rand::{Rng,thread_rng,ThreadRng};
+use rand::{Rng, thread_rng, ThreadRng};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -34,9 +35,9 @@ impl EllerMaze {
     pub fn generate(width: usize, height: usize, orient: MazeOrient) -> EllerMaze {
 
         let mut rng = thread_rng();
-        
-        //Closure for changing the maze generated (as proposed on neocomputer.org in "Example
-        //mazes" section
+
+        // Closure for changing the maze generated (as proposed on neocomputer.org in "Example
+        // mazes" section
         let verticality = |orient: &MazeOrient, rng: &mut ThreadRng, is_right: bool| -> bool {
             if is_right {
                 match *orient {
@@ -54,22 +55,23 @@ impl EllerMaze {
         };
 
         let mut maze: Vec<Vec<Cell>> = Vec::with_capacity(height);
-        
+
         // 1. Create the first row. No cells will be members of any set
         let mut row = vec![Cell { set: 0, rw: false, bw: false }; width];
 
-        row[width-1].rw = true; // The last one always has a wall.
+        row[width - 1].rw = true; // The last one always has a wall.
 
         let mut sets: HashMap<usize, Vec<usize>> = HashMap::with_capacity(width);
 
         for count_iterations in 0..height {
-            
+
             sets.drain(); // Empty the db
-            
+
             // Create a database of indexes for all set members
-            for (i,cell) in row.iter().enumerate() {
+            for (i, cell) in row.iter().enumerate() {
                 if sets.contains_key(&cell.set) {
-                    let mut vec = sets.get_mut(&cell.set).expect("Cannot get sets to compete the HashMap");
+                    let mut vec = sets.get_mut(&cell.set)
+                                      .expect("Cannot get sets to compete the HashMap");
                     (*vec).push(i);
                 } else {
                     sets.insert(cell.set, vec![i]);
@@ -77,7 +79,8 @@ impl EllerMaze {
             }
 
             // 2. Join any cells not members of a set to their own unique set
-            let no_set = sets.remove(&0).unwrap_or(vec![]); //Get indexes of cells without set, or init with empty vec
+            // Get indexes of cells without set, or init with empty vec
+            let no_set = sets.remove(&0).unwrap_or(vec![]);
             for i in no_set {
                 let mut j = 1;
                 while row[i].set == 0 {
@@ -91,9 +94,10 @@ impl EllerMaze {
             }
 
             // 3. Create right-walls, moving from left to right:
-            for i in 0..row.len()-1 {
-                // - If the current cell and the cell to the right are members of the same set, always create a wall between them. (This prevents loops)
-                if row[i].set == row[i+1].set {
+            for i in 0..row.len() - 1 {
+                // - If the current cell and the cell to the right are members of the same set,
+                // always create a wall between them. (This prevents loops)
+                if row[i].set == row[i + 1].set {
                     row[i].rw = true;
                     continue;
                 }
@@ -101,8 +105,8 @@ impl EllerMaze {
                 if verticality(&orient, &mut rng, true) {
                     row[i].rw = true;
                 } else {
-                    // - If you decide not to add a wall, union the sets to which the current cell and the cell to the right are members.
-                    let mut set2 = sets.remove(&row[i+1].set).expect("Can't get set for union");
+                    // - If you decide not to add a wall,  union the sets
+                    let mut set2 = sets.remove(&row[i + 1].set).expect("Can't get set for union");
                     let mut set1 = sets.get_mut(&row[i].set).expect("Can't get set to union with");
                     for j in set2.iter() {
                         row[*j].set = row[i].set;
@@ -112,13 +116,17 @@ impl EllerMaze {
             }
 
             // 4. Create bottom-walls, moving from left to right:
-            // 4.1. Randomly decide to add a wall or not. Make sure that each set has at least one cell without a bottom-wall (This prevents isolations)
+            // 4.1. Randomly decide to add a wall or not.
+            // Make sure that each set has at least one cell without a bottom-wall
             // - If a cell is the only member of its set, do not create a bottom-wall
-            // - If a cell is the only member of its set without a bottom-wall, do not create a bottom-wall
+            // - If a cell is the only member of its set without a bottom-wall,
+            // do not create a bottom-wall
             let mut wall_sets = sets.clone();
             for (i, cell) in row.iter_mut().enumerate() {
                 if verticality(&orient, &mut rng, false) {
-                    let mut set = wall_sets.get_mut(&cell.set).expect("Cannot get set to ensure correct bottom walls creation");
+                    let mut set = wall_sets.get_mut(&cell.set)
+                                           .expect("Cannot get set to ensure correct bottom \
+                                                    walls creation");
                     if set.len() > 1 {
                         cell.bw = true;
                         set.retain(|&x| x != i); // Maybe not optimal. Remove the element
@@ -128,7 +136,7 @@ impl EllerMaze {
 
             // 5. Decide to keep adding rows, or stop and complete the maze
             // 5.1. If you decide to add another row:
-            if !(count_iterations == height-1) {
+            if !(count_iterations == height - 1) {
                 // 5.1.1. Output the current row
                 maze.push(row.clone());
                 for cell in row.iter_mut() {
@@ -143,23 +151,23 @@ impl EllerMaze {
                         cell.bw = false;
                     }
                 }
-                row[width-1].rw = true; // return the right-most wall
+                row[width - 1].rw = true; // return the right-most wall
 
-            // 5.1.5. Continue from Step 2
+                // 5.1.5. Continue from Step 2
             }
         }
 
         // 5.2. If you decide to complete the maze
         // 5.2.2. Moving from left to right:
-        for i in 0..row.len()-1 {
+        for i in 0..row.len() - 1 {
             // 5.2.1. Add a bottom wall to every cell
             row[i].bw = true;
             // If the current cell and the cell to the right are members of a different set:
-            if row[i].set != row[i+1].set {
+            if row[i].set != row[i + 1].set {
                 // - Remove the right wall
                 row[i].rw = false;
                 // - Union the sets to which the current cell and cell to the right are members.
-                let mut set2 = sets.remove(&row[i+1].set).expect("Can't get set for union");
+                let mut set2 = sets.remove(&row[i + 1].set).expect("Can't get set for union");
                 let mut set1 = sets.get_mut(&row[i].set).expect("Can't get set to union with");
                 for j in set2.iter() {
                     row[*j].set = row[i].set;
@@ -167,14 +175,12 @@ impl EllerMaze {
                 set1.append(&mut set2);
             }
         }
-        row[width-1].bw = true;
+        row[width - 1].bw = true;
 
         // - Output the final row
         maze.push(row);
 
-        EllerMaze {
-            maze: maze,
-        }
+        EllerMaze { maze: maze }
     }
 }
 
@@ -220,5 +226,3 @@ impl fmt::Display for EllerMaze {
         write!(f, "{}", result)
     }
 }
-
-

@@ -1,6 +1,8 @@
 // Copyright 2016 Pavel Kiselev
 
 // My implementation of Eller's Algorithm, following instructions at http://www.neocomputer.org/projects/eller.html
+// Comments detailing algorithm steps are mostly copypasted from there
+
 
 #![allow(dead_code)]
 
